@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BID Assistant - Chatbot Professionnel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Styles généraux === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    /* === Bouton principal du chatbot === */
+    #chatbotButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #7b3fe4;
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      box-shadow: 0 6px 15px rgba(123, 63, 228, 0.3);
+      cursor: pointer;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+      animation: pulse 3s infinite;
+    }
+
+    #chatbotButton:hover {
+      background: #6a35c7;
+      transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    #chatbotButton img {
+      width: 32px;
+      height: 32px;
+      filter: brightness(0) invert(1);
+    }
+
+    /* === Fenêtre du chatbot === */
+    #chatbotPopup {
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 420px;
+      height: 600px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      z-index: 999999;
+      animation: fadeIn 0.3s ease-in-out;
+      transition: all 0.3s ease;
+    }
+
+    #chatbotPopup.open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    /* === En-tête du chatbot === */
+    .header-chatbot {
+      background: linear-gradient(135deg, #7b3fe4, #4b1d9e);
+      color: white;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-chatbot span {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-chatbot span::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: #34c759;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    #closeChatbotBtn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+    }
+
+    #closeChatbotBtn:hover {
+      opacity: 1;
+    }
+
+    /* === Conteneur de l'iframe === */
+    #iframeWrapper {
+      position: relative;
+      width: 100%;
+      height: calc(100% - 56px);
+      overflow: hidden;
+    }
+
+    #chatbotIframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      transition: opacity 0.3s ease;
+    }
+
+    /* === Footer personnalisé === */
+    .custom-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 8px;
+      background-color: #f9f9f9;
+      color: #888;
+      font-size: 12px;
+      border-top: 1px solid #eee;
+    }
+
+    /* === Loader de chargement === */
+    #chatbotLoader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f1f2f6;
+      border-top: 3px solid #7b3fe4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 999;
+    }
+
+    /* === Message d'erreur === */
+    #iframeError {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #7f3fbf;
+      font-size: 16px;
+      text-align: center;
+      padding: 20px;
+      z-index: 999;
+      width: 80%;
+    }
+
+    #tryAgainBtn {
+      background: #7b3fe4;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.2s ease;
+    }
+
+    #tryAgainBtn:hover {
+      background: #6a35c7;
+    }
+
+    /* === Animations === */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(20px) scale(0.95); }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* === Responsive Design === */
+    @media screen and (max-width: 480px) {
+      #chatbotPopup {
+        width: 90%;
+        height: 80vh;
+        bottom: 80px;
+        right: 5%;
+      }
+
+      #chatbotButton {
+        width: 56px;
+        height: 56px;
+      }
+
+      #chatbotButton img {
+        width: 28px;
+        height: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Bouton du chatbot -->
+  <button id="chatbotButton">
+    <img src="https://i.postimg.cc/YjYPXYFm/logo.png" alt="BID Logo">
+  </button>
+
+  <!-- Pop-up du chatbot -->
+  <div id="chatbotPopup">
+    <div class="header-chatbot">
+      <span>Assistant BID</span>
+      <button id="closeChatbotBtn">✖</button>
+    </div>
+    <div id="iframeWrapper">
+      <iframe id="chatbotIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" allow="microphone" src="about:blank"></iframe>
+      <div id="iframeError">
+        <p>Impossible de charger le chatbot dans cette fenêtre.</p>
+        <p>Veuillez patienter pendant que nous essayons de rétablir la connexion...</p>
+        <button id="tryAgainBtn">Réessayer</button>
+      </div>
+      <div class="custom-footer">© 2024 BID Consulting</div>
+      <div id="chatbotLoader"></div>
+    </div>
+  </div>
+
+  <!-- Script pour gérer l'ouverture/fermeture -->
+  <script>
+    // Configuration du chatbot
+    const CONFIG = {
+      streamlitURL: "http://localhost:8501/?embedded=true", // URL locale pour le développement
+      loadTimeout: 30000,  // 30 secondes
+      retryDelay: 5000    // 5 secondes
+    };
+
+    let loadAttempts = 0;
+    const MAX_ATTEMPTS = 3;
+    let loadTimer = null;
+    let isLoading = false;
+
+    // Fonction pour vérifier si l'iframe est accessible
+    function isIframeAccessible(iframe) {
+      try {
+        return iframe && iframe.contentWindow;
+      } catch (e) {
+        console.log("Erreur d'accès à l'iframe:", e);
+        return false;
+      }
+    }
+
+    // Fonction pour ouvrir le chatbot
+    function openChatbot() {
+      const popup = document.getElementById("chatbotPopup");
+
+      // Charger l'iframe si ce n'est pas déjà fait
+      if (!isLoading) {
+        loadChatbotIframe();
+      }
+
+      // Afficher le popup avec animation
+      popup.style.display = "block";
+      popup.style.animation = "fadeIn 0.3s ease-in-out";
+
+      // Masquer le bouton du chatbot
+      document.getElementById("chatbotButton").style.display = "none";
+    }
+
+    // Fonction pour fermer le chatbot
+    function closeChatbot() {
+      const popup = document.getElementById("chatbotPopup");
+      popup.style.animation = "fadeOut 0.3s ease-in-out";
+
+      setTimeout(() => {
+        popup.style.display = "none";
+        document.getElementById("chatbotButton").style.display = "flex";
+      }, 300);
+    }
+
+    // Fonction pour charger l'iframe du chatbot
+    function loadChatbotIframe() {
+      const iframeWrapper = document.getElementById("iframeWrapper");
+      const oldIframe = document.getElementById("chatbotIframe");
+      const loader = document.getElementById("chatbotLoader");
+      const errorDiv = document.getElementById("iframeError");
+
+      // Afficher le loader
+      loader.style.display = "block";
+      errorDiv.style.display = "none";
+
+      if (oldIframe) {
+        oldIframe.style.opacity = "0.3";
+      }
+
+      isLoading = true;
+      loadAttempts++;
+
+      console.log(`Tentative ${loadAttempts}/${MAX_ATTEMPTS} de chargement du chatbot`);
+
+      // Créer un nouvel iframe
+      const newIframe = document.createElement('iframe');
+      newIframe.id = "chatbotIframe";
+      newIframe.style.width = "100%";
+      newIframe.style.height = "100%";
+      newIframe.style.border = "none";
+      newIframe.style.opacity = "0";
+      newIframe.allow = "microphone";
+      newIframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox";
+
+      // Définir l'URL de l'iframe
+      newIframe.src = CONFIG.streamlitURL;
+
+      // Remplacer l'ancien iframe par le nouveau
+      if (oldIframe) {
+        iframeWrapper.replaceChild(newIframe, oldIframe);
+      } else {
+        iframeWrapper.appendChild(newIframe);
+      }
+
+      // Configurer le timeout pour le chargement
+      if (loadTimer) {
+        clearTimeout(loadTimer);
+      }
+
+      loadTimer = setTimeout(() => {
+        if (isIframeAccessible(newIframe)) {
+          console.log("Iframe chargé avec succès");
+          loader.style.display = "none";
+          newIframe.style.opacity = "1";
+          isLoading = false;
+          loadAttempts = 0;
+        } else {
+          console.log("Échec du chargement de l'iframe");
+
+          if (loadAttempts < MAX_ATTEMPTS) {
+            // Réessayer
+            setTimeout(loadChatbotIframe, CONFIG.retryDelay);
+          } else {
+            // Afficher le message d'erreur
+            loader.style.display = "none";
+            errorDiv.style.display = "block";
+            isLoading = false;
+          }
+        }
+      }, CONFIG.loadTimeout);
+
+      // Événement de chargement de l'iframe
+      newIframe.onload = function() {
+        if (isIframeAccessible(newIframe)) {
+          console.log("Iframe chargé via l'événement onload");
+          loader.style.display = "none";
+          newIframe.style.opacity = "1";
+          isLoading = false;
+          loadAttempts = 0;
+
+          if (loadTimer) {
+            clearTimeout(loadTimer);
+            loadTimer = null;
+          }
+        }
+      };
+    }
+
+    // Initialisation
+    document.addEventListener("DOMContentLoaded", function() {
+      const chatbotButton = document.getElementById("chatbotButton");
+      const closeChatbotBtn = document.getElementById("closeChatbotBtn");
+      const tryAgainBtn = document.getElementById("tryAgainBtn");
+      const popup = document.getElementById("chatbotPopup");
+
+      chatbotButton.addEventListener("click", openChatbot);
+      closeChatbotBtn.addEventListener("click", closeChatbot);
+      tryAgainBtn.addEventListener("click", () => {
+        loadAttempts = 0;
+        loadChatbotIframe();
+      });
+
+      // Fermer le chatbot en cliquant en dehors
+      document.addEventListener("click", function(event) {
+        if (popup.style.display === "block" &&
+            !popup.contains(event.target) &&
+            !chatbotButton.contains(event.target)) {
+          closeChatbot();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
